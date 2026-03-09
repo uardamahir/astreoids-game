@@ -38,6 +38,10 @@
 		const SOUND_ON = true; //arkaplanda sesleri kapa
 		const MUSIC_ON = true;
 		
+		//power-ups
+		const POWERUP_LIFE_SIZE = 20;     // power-up boyutu
+		const POWERUP_LIFE_DUR = 10;      // ekranda kalma süresi (saniye)
+		const POWERUP_LIFE_CHANCE = 0.2;  // her level'da çıkma ihtimali (%20)
 
 
 
@@ -236,10 +240,11 @@
 		}
 
 		function newLevel() {
-			text = "Level " + (level + 1);
-			textAlpha = 1.0;
-			createAstreoidBelt();
-		}
+    text = "Level " + (level + 1);
+    textAlpha = 1.0;
+    createAstreoidBelt();
+    spawnLifePowerUp(); // ← bunu ekle
+}
 
 
 		function newShip() {
@@ -331,6 +336,45 @@
 				}
 			}
 		}
+		
+		var lifePowerUp = null;
+
+function spawnLifePowerUp() {
+    if (Math.random() < POWERUP_LIFE_CHANCE) {
+        lifePowerUp = {
+            x: Math.random() * canv.width,
+            y: Math.random() * canv.height,
+            r: POWERUP_LIFE_SIZE,
+            timer: POWERUP_LIFE_DUR * FPS
+        };
+    } else {
+        lifePowerUp = null;
+    }
+}
+
+function drawLifePowerUp() {
+    if (!lifePowerUp) return;
+
+    var x = lifePowerUp.x;
+    var y = lifePowerUp.y;
+    var r = lifePowerUp.r;
+
+    // Yeşil daire arka plan
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0, 200, 0, 0.2)";
+    ctx.fill();
+    ctx.strokeStyle = "lime";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Kalp simgesi ♥
+    ctx.fillStyle = "lime";
+    ctx.font = "bold " + r + "px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("♥", x, y);
+}
 
 		function update() {
 			var blinkOn = ship.blinkNum % 2 == 0;
@@ -490,6 +534,27 @@
 					ctx.fill();
 				} 
 			}
+
+			// power-up çiz ve kontrol et
+if (lifePowerUp) {
+    drawLifePowerUp();
+
+    // süre dolunca kaybol
+    lifePowerUp.timer--;
+    if (lifePowerUp.timer <= 0) {
+        lifePowerUp = null;
+    }
+
+    // gemiye çarpma kontrolü
+    if (!exploding && !ship.dead &&
+        distBetweenPoints(ship.x, ship.y, lifePowerUp.x, lifePowerUp.y) < ship.r + lifePowerUp.r) {
+        lives++;                // can +1
+        lifePowerUp = null;     // power-up kaybolur
+        // kısa bir yazı göster
+        text = "+1 Can!";
+        textAlpha = 1.0;
+    }
+}
 
 			//level yazısı
 			if (textAlpha >= 0) {
